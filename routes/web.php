@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 
 use App\Http\Controllers\ConductorController;
 use App\Http\Controllers\CuentaPorCobrarController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\PasajeroController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\SectorController;
@@ -57,6 +58,12 @@ Route::get('/', function () {
     Route::resource('reportes', ReporteController::class);
     Route::resource('viajes', ViajeController::class); // Asegúrate de que el controlador de viajes esté accesible
 
+    Route::get('notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
+    Route::get('notificaciones/{id}', [NotificacionController::class, 'show'])->name('notificaciones.show');
+    Route::post('notificaciones/mark-all-read', [NotificacionController::class, 'markAllAsRead'])->name('notificaciones.markAllAsRead');
+    Route::delete('notificaciones/{id}', [NotificacionController::class, 'destroy'])->name('notificaciones.destroy');
+    
+    
     Route::post('/viajes/exportar', [ReporteController::class, 'exportarExcel'])->name('reportes.exportarExcel');
     Route::post('/exportar-cuentas-por-cobrar', [ReporteController::class, 'exportarCuentasPorCobrarExcel'])->name('cuentasPorCobrar.exportarExcel');
     Route::post('/exportar-pagos', [ReporteController::class, 'exportarPagosExcel'])->name('pagos.exportarExcel');

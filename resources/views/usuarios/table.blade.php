@@ -5,7 +5,7 @@
                 <th>#</th>
                 <th>Nombre</th>
                 <th>Email</th>
-              
+                <th>Estado</th>
                 <th>Fecha</th>
                 <th>Rol</th>
                 <th>Opciones</th>
@@ -37,6 +37,7 @@
                 { data: 'email', name: 'email' },
                
                 { data: 'fecha', name: 'fecha' },
+                { data: 'status', name: 'status' },
                 { data: 'role', name: 'role', orderable: false, searchable: false }, // Add this line for role
                 { data: 'actions', name: 'actions', searchable: false, orderable: false } // Make sure to set orderable and searchable to false
             ],

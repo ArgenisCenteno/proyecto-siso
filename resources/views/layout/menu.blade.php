@@ -1,6 +1,6 @@
 <!-- ======= Sidebar ======= -->
-<aside id="sidebar" class="sidebar">
-
+<aside id="sidebar" class="sidebar " style="color: black !important">
+  
   <ul class="sidebar-nav" id="sidebar-nav">
 
   @if(Auth::user()->hasRole('superAdmin'))

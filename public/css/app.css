@@ -465,7 +465,7 @@
   
   .header-nav .nav-icon {
     font-size: 22px;
-    color: #012970;
+    color: #ffffff;
     margin-right: 25px;
     position: relative;
   }
@@ -681,7 +681,7 @@
     align-items: center;
     font-size: 15px;
     font-weight: 600;
-    color: #800b3c;
+   
     transition: 0.3;
     background: #f6f9ff;
     padding: 10px 15px;
@@ -691,11 +691,11 @@
   .sidebar-nav .nav-link i {
     font-size: 16px;
     margin-right: 10px;
-    color: #800b3c;
+   
   }
   
   .sidebar-nav .nav-link.collapsed {
-    color: #800b3c;
+   
     background: #fff;
   }
   

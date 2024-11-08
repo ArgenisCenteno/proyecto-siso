@@ -148,10 +148,10 @@
 
     <div class="row gy-4">
 
-      <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="100">
+      <div class="col-lg-6" data-aos="zoom-in" data-aos-delay="100">
         <div class="pricing-item">
-          <h3>Plan Básico</h3>
-          <h4><sup>$</sup>1<span> / viaje</span></h4>
+          <h3>Carrera corta</h3>
+          <h4><sup>30 Bs</sup>1<span> / viaje</span></h4>
           <ul>
             <li><i class="bi bi-check"></i> <span>Viaje corto en la ciudad</span></li>
             <li><i class="bi bi-check"></i> <span>Disponible de lunes a viernes</span></li>
@@ -163,10 +163,10 @@
         </div>
       </div><!-- End Pricing Item -->
 
-      <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+      <div class="col-lg-6" data-aos="zoom-in" data-aos-delay="200">
         <div class="pricing-item featured">
-          <h3>Plan Intermedio</h3>
-          <h4><sup>$</sup>2<span> / viaje</span></h4>
+          <h3>Carrera Larga</h3>
+          <h4><sup>60 Bs</sup>1<span> / viaje</span></h4>
           <ul>
             <li><i class="bi bi-check"></i> <span>Viaje de media distancia</span></li>
             <li><i class="bi bi-check"></i> <span>Disponible de lunes a sábado</span></li>
@@ -178,20 +178,7 @@
         </div>
       </div><!-- End Pricing Item -->
 
-      <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="300">
-        <div class="pricing-item">
-          <h3>Plan Premium</h3>
-          <h4><sup>$</sup>4<span> / viaje</span></h4>
-          <ul>
-            <li><i class="bi bi-check"></i> <span>Viaje largo en la ciudad</span></li>
-            <li><i class="bi bi-check"></i> <span>Disponible todos los días</span></li>
-            <li><i class="bi bi-check"></i> <span>Soporte premium 24/7</span></li>
-            <li><i class="bi bi-check"></i> <span>Seguros adicionales incluidos</span></li>
-            <li><i class="bi bi-check"></i> <span>Descuentos en viajes frecuentes</span></li>
-          </ul>
-          <a href="#" class="buy-btn">Contratar</a>
-        </div>
-      </div><!-- End Pricing Item -->
+   
 
     </div>
 

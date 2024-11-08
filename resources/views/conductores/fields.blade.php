@@ -43,6 +43,10 @@
         <input type="text" class="form-control" id="casa" value="{{ $conductor->casa }}" readonly>
     </div>
     <div class="col-md-4">
+        <label for="status" class="form-label">Telefono de emergencia</label>
+        <input type="text" class="form-control" id="status" value="{{ $conductor->telefono_emergencia ?? '' }}" readonly>
+    </div>
+    <div class="col-md-4">
         <label for="status" class="form-label">Estado</label>
         <input type="text" class="form-control" id="status" value="{{ $conductor->status }}" readonly>
     </div>
@@ -70,6 +74,7 @@
                     <th>Color</th>
                     <th>Placa</th>
                     <th>Año</th>
+                    <th>Propietario</th>
                 </tr>
             </thead>
             <tbody>
@@ -81,6 +86,7 @@
                         <td>{{ $vehicle->color }}</td>
                         <td>{{ $vehicle->placa }}</td>
                         <td>{{ $vehicle->anio }}</td>
+                        <td>{{ $vehicle->propietario }}</td>
                     </tr>
                 @endforeach
             </tbody>

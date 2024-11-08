@@ -8,6 +8,10 @@ use App\Models\Servicio;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Viaje;
+use App\Notifications\CuentaPorCobrarNotification;
+use App\Notifications\ViajeActualizadoNotification;
+use App\Notifications\ViajeCanceladoNotification;
+use App\Notifications\ViajeSolicitadoNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Alert;
@@ -84,17 +88,17 @@ class ViajeController extends Controller
                     $editUrl = route('viajes.edit', $row->id);
                     $deleteUrl = route('viajes.destroy', $row->id);
                     $cancelar = route('viajes.cancelar', $row->id);
-                
+
                     // Botón de Editar, disponible para todos los roles
                     $actions = '<a href="' . $editUrl . '" class="btn btn-success btn-sm">Detalles</a>';
-                
+
                     // Botón de Cancelar, disponible para todos los roles
                     $actions .= '<form action="' . $cancelar . '" method="POST" style="display:inline;" class="btn-delete" onsubmit="return confirm(\'¿Estás seguro de que deseas cancelar este viaje?\');">
                                     ' . csrf_field() . '
                                     ' . method_field('PUT') . '
                                     <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
                                 </form>';
-                
+
                     // Botón de Eliminar, disponible solo para superAdmin
                     if (auth()->user()->hasRole('superAdmin')) {
                         $actions .= '<form action="' . $deleteUrl . '" method="POST" style="display:inline;" class="btn-delete" onsubmit="return confirm(\'¿Estás seguro de que deseas eliminar este viaje?\');">
@@ -103,10 +107,10 @@ class ViajeController extends Controller
                                         <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
                                     </form>';
                     }
-                
+
                     return $actions;
                 })
-                
+
                 ->rawColumns(['vehiculo_id', 'estado', 'hora_salida', 'hora_llegada', 'created_at', 'updated_at', 'actions']) // Permitir HTML en estas columnas
                 ->make(true);
         } else {
@@ -140,43 +144,52 @@ class ViajeController extends Controller
             'distancia' => 'required|numeric',
             'tiempo' => 'required|numeric',
         ]);
-    
-      //  dd($request);
+
         $servicio = Servicio::find($request->servicio);
-    
         $precioPorKm = $servicio->costo;
         $distanciaKm = $request->distancia;
-        $precio = $distanciaKm * $precioPorKm;
-    
+        $precio = $precioPorKm;
+
         // Crear una nueva instancia del modelo Viaje y guardar los datos
         $viaje = new Viaje();
-        $viaje->user_id = auth()->id(); // Asigna el ID del usuario autenticado
-        $viaje->origen = json_encode(['lat' => $request->origen_lat, 'lon' => $request->origen_lon]); // Guardar origen como JSON
-        $viaje->destino = json_encode(['lat' => $request->destino_lat, 'lon' => $request->destino_lon]); // Guardar destino como JSON
+        $viaje->user_id = auth()->id();
+        $viaje->origen = json_encode(['lat' => $request->origen_lat, 'lon' => $request->origen_lon]);
+        $viaje->destino = json_encode(['lat' => $request->destino_lat, 'lon' => $request->destino_lon]);
         $viaje->distancia_km = $distanciaKm;
         $viaje->precio = $precio;
         $viaje->estado = 'Pendiente';
         $viaje->direccion = $request->direccion_destino;
         $viaje->sector_id = $request->sector;
-        // Guardar el viaje en la base de datos
         $viaje->save();
-    
+
         // Crear una cuenta por cobrar en estado 'Pendiente'
         $cuenta = new CuentaPorCobrar();
-        $cuenta->descripcion = 'Cobro por servicio de viaje'; 
-        $cuenta->monto = $precio; 
+        $cuenta->descripcion = 'Cobro por servicio de viaje';
+        $cuenta->monto = $precio;
         $cuenta->status = 'Pendiente';
         $cuenta->viaje_id = $viaje->id;
         $cuenta->user_id = auth()->id();
-        $cuenta->procesado_por = null; 
-        $cuenta->save(); 
-    
-        // Redireccionar o devolver una respuesta
+        $cuenta->procesado_por = null;
+        $cuenta->save();
+
+        // Notificar al usuario solicitante sobre la cuenta pendiente
+        $viaje->user->notify(new CuentaPorCobrarNotification($cuenta));
+
+        // Enviar notificación a usuarios con rol 'superAdmin'
+        $superAdmins = User::whereHas('roles', function ($query) {
+            $query->where('name', 'superAdmin');
+        })->get();
+
+        foreach ($superAdmins as $admin) {
+            $admin->notify(new ViajeSolicitadoNotification($viaje));
+        }
+
+        // Redireccionar con mensaje de éxito
         Alert::success('¡Éxito!', 'Viaje solicitado correctamente, espere que se le asigne un conductor')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
-    
+
         return redirect()->route('cuentasPorCobrar.index');
     }
-    
+
 
     /**
      * Display the specified resource.
@@ -198,7 +211,7 @@ class ViajeController extends Controller
         $origen = json_decode($viaje->origen, true);
         $destino = json_decode($viaje->destino, true);
 
-   //     dd($users);
+        //     dd($users);
         return view('viajes.edit', compact('viaje', 'origen', 'destino', 'users'));
     }
 
@@ -209,36 +222,33 @@ class ViajeController extends Controller
     public function update(Request $request, string $id)
     {
         $viaje = Viaje::find($id);
-
         $vehiculo = Vehicle::where('user_id', $request->user_id)->first();
 
-        if($request->user_id){
-            if(!$vehiculo){
-                Alert::error('¡Error!', 'Este usuario no tiene vehiculo registrado')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+        if ($request->user_id) {
+            if (!$vehiculo) {
+                Alert::error('¡Error!', 'Este usuario no tiene vehículo registrado')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
                 return redirect()->route('viajes.index');
             }
 
             $viaje->vehiculo_id = $vehiculo->id;
         }
-       
-       
+
         $viaje->estado = $request->estado;
-       
 
         if ($request->estado == 'Iniciado') {
-            // Actualiza la hora de salida
-            $viaje->hora_salida = Carbon::now();
+            $viaje->hora_salida = now();
         } elseif ($request->estado == 'Finalizado') {
-            // Actualiza la hora de llegada
-            $viaje->hora_llegada = Carbon::now();
+            $viaje->hora_llegada = now();
         }
 
         $viaje->save();
-        Alert::success('¡Éxito!', 'Viaje actualizado correctamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
 
+        // Notificar al usuario o a un rol específico como 'superAdmin'
+        $viaje->user->notify(new ViajeActualizadoNotification($viaje));
+
+        Alert::success('¡Éxito!', 'Viaje actualizado correctamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
         return redirect()->route('viajes.index');
     }
-
     /**
      * Remove the specified resource from storage.
      */
@@ -248,29 +258,36 @@ class ViajeController extends Controller
     }
 
     public function cancelar($id)
-{
-    // Buscar el viaje por ID
-    $viaje = Viaje::findOrFail($id);
+    {
+        // Buscar el viaje por ID
+        $viaje = Viaje::findOrFail($id);
 
-    // Verificar si el viaje ya no está finalizado
-    if ($viaje->estado === 'Finalizado') {
-        Alert::error('¡Error!', 'No se puede cancelar un viaje que ya finalizó')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+        // Verificar si el viaje ya no está finalizado
+        if ($viaje->estado === 'Finalizado') {
+            Alert::error('¡Error!', 'No se puede cancelar un viaje que ya finalizó')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+            return redirect()->back()->with('error', 'No se puede cancelar un viaje que ya ha finalizado.');
+        } else if ($viaje->estado === 'Cancelado') {
+            Alert::error('¡Error!', 'No se puede cancelar un viaje que ya fue cancelado con anterioridad')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+            return redirect()->back()->with('error', 'No se puede cancelar un viaje que ya ha finalizado.');
+        }
 
-        return redirect()->back()->with('error', 'No se puede cancelar un viaje que ya ha finalizado.');
-    }else if($viaje->estado === 'Cancelado'){
-        Alert::error('¡Error!', 'No se puede cancelar un viaje que ya fue cancelado con anterioridad')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+        // Cambiar el estado a "Cancelado"
+        $viaje->estado = 'Cancelado';
+        $viaje->save();
 
-        return redirect()->back()->with('error', 'No se puede cancelar un viaje que ya ha finalizado.');
+        // Enviar notificación al usuario del viaje
+        $viaje->user->notify(new ViajeCanceladoNotification($viaje));
+
+        
+        $superAdmins = User::whereHas('roles', function ($query) {
+            $query->where('name', 'superAdmin');
+        })->get();
+        foreach ($superAdmins as $admin) {
+            $admin->notify(new ViajeCanceladoNotification($viaje));
+        }
+
+        // Redirigir con un mensaje de éxito
+        Alert::success('¡Éxito!', 'Viaje cancelado correctamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+        return redirect()->back()->with('success', 'El viaje ha sido cancelado exitosamente.');
     }
-
-    // Cambiar el estado a "Cancelado"
-    $viaje->estado = 'Cancelado';
-    $viaje->save();
-
-    // Redirigir con un mensaje de éxito
-    Alert::success('¡Éxito!', 'Viaje cancelado correctamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
-
-    return redirect()->back()->with('success', 'El viaje ha sido cancelado exitosamente.');
-}
-
 }

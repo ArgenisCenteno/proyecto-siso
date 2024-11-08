@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DatosBancario;
 use App\Models\RegistroConductor;
 use App\Models\Sector;
 use App\Models\Servicio;
@@ -128,7 +129,7 @@ class UserController extends Controller
             'foto_perfil' => $documentItvPath, // Guardar la ruta de la foto de perfil
             'genero' => $request->genero,
             'referencia' => $request->referencia,
-            
+
         ]);
 
         // Asignar el rol al usuario
@@ -184,9 +185,27 @@ class UserController extends Controller
             $vehiculo->color = $request->color;
             $vehiculo->placa = $request->placa;
             $vehiculo->anio = $request->anio;
+            $vehiculo->propietario = $request->propietario;
             $vehiculo->servicio_id = $request->servicio_id;
             $vehiculo->save();
 
+            // Registrar datos bancarios (si se proporcionan)
+            if ($request->has('banco') && $request->has('dni') && $request->has('tipo_cuenta') && $request->has('numero_cuenta') && $request->has('estatus')) {
+                $datosBancarios = new DatosBancario();
+                $datosBancarios->user_id = $user->id;
+                $datosBancarios->banco = $request->banco;
+                $datosBancarios->dni = $request->dni;
+                $datosBancarios->tipo_cuenta = $request->tipo_cuenta;
+                $datosBancarios->numero_cuenta = $request->numero_cuenta;
+                $datosBancarios->estatus = $request->estatus;
+                $datosBancarios->save();
+            }
+
+            // Registrar número de emergencia (si se proporciona)
+            if ($request->has('telefono_emergencia')) {
+                $user->telefono_emergencia = $request->telefono_emergencia;
+                $user->save();
+            }
             $user->status = 'Inactivo';
             $user->save();
         }

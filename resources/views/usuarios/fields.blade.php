@@ -158,7 +158,7 @@
                     </select>
                 </div>
 
-               
+
                 <div class="col-md-6 mb-3">
                     <label for="tipo" class="form-label">Tipo de Vehículo</label>
                     <select class="form-select" id="tipo" name="tipo" required>
@@ -197,8 +197,63 @@
                     <label for="anio" class="form-label">Año</label>
                     <input type="number" class="form-control" id="anio" name="anio" required>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label for="propietario" class="form-label">¿Es propietario?</label>
+                    <select class="form-control" id="propietario" name="propietario" required>
+                        <option value="SI">Sí</option>
+                        <option value="NO">No</option>
+                    </select>
+                </div>
 
 
+                <div class="col-md-6 mb-3">
+                    <label for="banco">Banco</label>
+                    <select name="banco" id="banco" class="form-control" required>
+                        <option value="Banco de Venezuela">Banco de Venezuela</option>
+                        <option value="Banco Mercantil">Banco Mercantil</option>
+                        <option value="Bancaribe">Bancaribe</option>
+                        <option value="Banco Provincial">Banco Provincial</option>
+                        <option value="BBVA">BBVA</option>
+                        <option value="Banco Nacional de Crédito (BNC)">Banco Nacional de Crédito (BNC)</option>
+                        <option value="Banesco">Banesco</option>
+                        <option value="Banco del Tesoro">Banco del Tesoro</option>
+                        <option value="Banco Exterior">Banco Exterior</option>
+                        <option value="Fondo Común">Fondo Común</option>
+                        <option value="Venezolano de Crédito">Venezolano de Crédito</option>
+                        <option value="BFC Banco Fondo Común">BFC Banco Fondo Común</option>
+                    </select>
+                </div>
+
+
+                <div class="col-md-6 mb-3">
+                    <label for="dni">DNI</label>
+                    <input type="text" name="dni" id="dni" class="form-control" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="tipo_cuenta">Tipo de Cuenta</label>
+                    <select name="tipo_cuenta" id="tipo_cuenta" class="form-control" required>
+                        <option value="CORRIENTE">CORRIENTE</option>
+                        <option value="AHORRO">AHORRO</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="numero_cuenta">Número de Cuenta</label>
+                    <input type="text" name="numero_cuenta" id="numero_cuenta" class="form-control" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="estatus">Estatus</label>
+                    <select name="estatus" id="estatus" class="form-control" required>
+                        <option value="ACTIVO">ACTIVO</option>
+                        <option value="INACTIVO">INACTIVO</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="telefono_emergencia">Teléfono de Emergencia</label>
+                    <input type="text" name="telefono_emergencia" id="telefono_emergencia" class="form-control">
+                </div>
             </div>
 
         </div>
@@ -219,6 +274,54 @@
                 $('#document-upload-fields').show();
             } else {
                 $('#document-upload-fields').hide();
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        $('#telefono_emergencia').on('input', function () {
+            var telefono = $(this).val();
+            var regex = /^(0412|0414|0424|0416|0426)[0-9]{7}$/; // Regex para validar el teléfono venezolano
+
+            if (!regex.test(telefono)) {
+                $(this).css('border-color', 'red');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error previo
+                $(this).after('<span class="error-message" style="color: red;">El número de teléfono debe ser válido.</span>');
+            } else {
+                $(this).css('border-color', 'green');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error si es válido
+            }
+        });
+    });
+    $(document).ready(function () {
+        // Validar placa
+        $('#placa').on('input', function () {
+            var placa = $(this).val();
+            // Expresión regular para la placa (4 letras + 3 números o 4 letras + 4 números)
+            var regexPlaca = /^[A-Z]{3,4}-\d{3,4}$/;
+
+            if (!regexPlaca.test(placa)) {
+                $(this).css('border-color', 'red');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error previo
+                $(this).after('<span class="error-message" style="color: red;">La placa debe seguir el formato válido (ej. ABC-123 o ABCD-1234).</span>');
+            } else {
+                $(this).css('border-color', 'green');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error si es válido
+            }
+        });
+
+        // Validar año
+        $('#anio').on('input', function () {
+            var anio = $(this).val();
+            var currentYear = new Date().getFullYear();
+            // Verificar que el año esté en el rango válido
+            if (anio < 2000 || anio > currentYear) {
+                $(this).css('border-color', 'red');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error previo
+                $(this).after('<span class="error-message" style="color: red;">El año debe ser mayor o igual a 1900 y menor o igual al año actual.</span>');
+            } else {
+                $(this).css('border-color', 'green');
+                $(this).next('.error-message').remove(); // Eliminar mensaje de error si es válido
             }
         });
     });

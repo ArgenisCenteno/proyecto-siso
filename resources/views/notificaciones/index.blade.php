@@ -3,7 +3,7 @@
 @section('content')
 
 
-<main class="app-main"> <!--begin::App Content Header-->
+<main id="main" class="main"> 
     <div class="container-fluid">
         <div class="animated fadeIn">
             <div class="row">
@@ -21,32 +21,47 @@
                         </div>
                         <div class="card-body">
 
-                            <ul class="list-group mt-3">
-                                @forelse($notificaciones as $notificacion)
-                                    <li class="list-group-item {{ $notificacion->read_at ? '' : 'bg-light' }}">
-                                        <a href="{{$notificacion->data['url']}}">
-                                            {{-- Muestra el mensaje de la notificación --}}
-                                            {{ $notificacion->data['message'] ?? 'Notificación' }}
+                        <table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Notificación</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($notificaciones as $notificacion)
+            <tr class="{{ $notificacion->read_at ? '' : 'table-light' }}">
+                <td>
+                    <a href="{{ $notificacion->data['url'] }}">
+                        {{ $notificacion->data['message'] ?? 'Notificación' }}
+                    </a>
+                </td>
+                <td>
+                    @if(isset($notificacion->data['type']))
+                        <span class="badge bg-secondary">{{ $notificacion->data['type'] }}</span>
+                    @endif
+                </td>
+                <td>
+                    <span class="text-muted">{{ $notificacion->created_at->diffForHumans() }}</span>
+                </td>
+                <td>
+                    <form action="{{ route('notificaciones.destroy', $notificacion->id) }}" method="POST" class="d-inline-block">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="4" class="text-center">No hay notificaciones.</td>
+            </tr>
+        @endforelse
+    </tbody>
+</table>
 
-                                            {{-- Muestra el tipo de notificación --}}
-                                            @if(isset($notificacion->data['type']))
-                                                <span class="badge bg-secondary ms-2">{{ $notificacion->data['type'] }}</span>
-                                            @endif
-
-                                            <span class="text-muted">{{ $notificacion->created_at->diffForHumans() }}</span>
-                                        </a>
-
-                                        <form action="{{ route('notificaciones.destroy', $notificacion->id) }}"
-                                            method="POST" class="d-inline-block float-end">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                                        </form>
-                                    </li>
-                                @empty
-                                    <li class="list-group-item">No hay notificaciones.</li>
-                                @endforelse
-                            </ul>
                         </div>
                     </div>
                 </div>

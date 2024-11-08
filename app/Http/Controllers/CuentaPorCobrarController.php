@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\CuentaPorCobrar;
 use App\Models\Pago;
 use App\Models\Recibo;
+use App\Models\User;
+use App\Notifications\PagoActualizadoNotification;
+use App\Notifications\PagoRealizadoNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\DataTables;
@@ -118,47 +121,53 @@ class CuentaPorCobrarController extends Controller
     /**
      * Store a newly created resource in storage.
      */
- public function store(Request $request)
-{
-    // Validar los datos del formulario
- //  dd($request);
-
-    // Obtener la cuenta por cobrar
-    $cuenta = CuentaPorCobrar::findOrFail($request->id);
-
-    // Verificar que la cuenta no esté ya pagada o cancelada
-    if ($cuenta->status === 'Pagada' || $cuenta->status === 'Cancelada' || $cuenta->status === 'En proceso') {
-        Alert::error('¡Error!', 'Esta cuenta no puede ser pagada')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
-
-        return redirect()->back()->withErrors(['La cuenta ya está pagada o cancelada.']);
+    public function store(Request $request)
+    {
+        // Validar los datos del formulario
+        // dd($request);
+    
+        // Obtener la cuenta por cobrar
+        $cuenta = CuentaPorCobrar::findOrFail($request->id);
+    
+        // Verificar que la cuenta no esté ya pagada o cancelada
+        if ($cuenta->status === 'Pagada' || $cuenta->status === 'Cancelada' || $cuenta->status === 'En proceso') {
+            Alert::error('¡Error!', 'Esta cuenta no puede ser pagada')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+            return redirect()->back()->withErrors(['La cuenta ya está pagada o cancelada.']);
+        }
+    
+        // Determinar el método de pago
+        $metodo = $request->banco_origen_transfer ? "Transferencia Bancaria" : "Pago Móvil";
+    
+        // Registrar el pago
+        $pago = new Pago();
+        $pago->viaje_id = $cuenta->viaje_id;
+        $pago->monto = $request->monto_pago;
+        $pago->metodo_pago = $metodo;
+        $pago->banco_origen = $request->banco_origen_transfer ?? $request->banco_origen_movil;
+        $pago->banco_destino = $request->banco_destino_transfer ?? $request->banco_destino_movil;
+        $pago->referencia = $request->referencia_transfer ?? $request->referencia_movil;
+        $pago->save();
+    
+        // Actualizar el estado de la cuenta a "En proceso"
+        $cuenta->status = 'En proceso';
+        $cuenta->pago_id = $pago->id;
+        $cuenta->save();
+    
+        // Enviar notificación a superAdmins
+        $superAdmins = User::whereHas('roles', function ($query) {
+            $query->where('name', 'superAdmin');
+        })->get();
+    
+        foreach ($superAdmins as $admin) {
+            $admin->notify(new PagoRealizadoNotification($pago, $cuenta));
+        }
+    
+        // Notificación de éxito al usuario
+        Alert::success('¡Éxito!', 'Pago realizado exitosamente, espere su validación')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+    
+        return redirect()->route('cuentasPorCobrar.index')->with('success', 'Pago registrado exitosamente.');
     }
-
-    $metodo = "";
-    if($request->banco_origen_transfer){
-        $metodo = "Transferencia Bancaria";
-    }else{
-        $metodo = "Pago Móvil";
-    }
-
-    //dd($request);
-    // Registrar el pago
-    $pago = new Pago();
-    $pago->viaje_id = $cuenta->viaje_id;
-    $pago->monto = $request->monto_pago;
-    $pago->metodo_pago = $metodo;
-    $pago->banco_origen = $request->banco_origen_transfer ?? $request->banco_origen_movil;
-    $pago->banco_destino = $request->banco_destino_transfer ?? $request->banco_destino_movil;
-    $pago->referencia = $request->referencia_transfer ?? $request->referencia_movil;
-    $pago->save();
-
-    // Actualizar el estado de la cuenta a pagada
-    $cuenta->status = 'En proceso';
-    $cuenta->pago_id = $pago->id;
-    $cuenta->save();
-    Alert::success('¡Éxito!', 'Pago realizado exitosamente, espere su validación')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
-
-    return redirect()->route('cuentasPorCobrar.index')->with('success', 'Pago registrado exitosamente.');
-}
+    
 
     
 
@@ -231,6 +240,9 @@ class CuentaPorCobrarController extends Controller
         $orden->procesado_por = Auth::id(); // Asigna el ID del usuario autenticado
     }
     $orden->save();
+
+    $orden->user->notify(new PagoActualizadoNotification($orden));
+
     // Redirigir con un mensaje de éxito
     Alert::success('¡Éxito!', 'Cuenta actualizada correctamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
 

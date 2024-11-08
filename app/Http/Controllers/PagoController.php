@@ -10,6 +10,7 @@ use App\Models\Tasa;
 use App\Models\Transaccion;
 use App\Models\User;
 use App\Models\Venta;
+use App\Notifications\PagoActualizadoNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -107,29 +108,32 @@ class PagoController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $request->validate([
-            'status' => 'required|string|max:255',
-        ]);
+{
+    $request->validate([
+        'status' => 'required|string|max:255',
+    ]);
 
-        $pago = Pago::findOrFail($id); // Find the payment by ID
-        $pago->status = $request->status; // Update the status
-        $pago->save(); // Save the changes
+    $pago = Pago::findOrFail($id); // Encuentra el pago por ID
+    $pago->status = $request->status; // Actualiza el estado
+    $pago->save(); // Guarda los cambios
 
-        $venta = Venta::where('pago_id', $id)->first();
-        $recibo = Recibo::where('pago_id', $id)->first();
+    $venta = Venta::where('pago_id', $id)->first();
+    $recibo = Recibo::where('pago_id', $id)->first();
 
-        if (($request->status == 'Pagado' || $request->status == 'Rechazado') && $pago->tipo == 'Venta') {
-            $venta->status = $request->status;
-            $venta->save();
+    if (($request->status == 'Pagado' || $request->status == 'Rechazado') && $pago->tipo == 'Venta') {
+        $venta->status = $request->status;
+        $venta->save();
 
-            $recibo->estatus = $request->status;
-            $recibo->save();
-        }
-
-        Alert::success('¡Exito!', 'Pago actualizado exitosamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
-        return redirect(route('pagos.index'));
+        $recibo->estatus = $request->status;
+        $recibo->save();
     }
+
+    // Enviar la notificación al usuario que realizó el pago
+    $venta->user->notify(new PagoActualizadoNotification($pago));
+
+    Alert::success('¡Exito!', 'Pago actualizado exitosamente')->showConfirmButton('Aceptar', 'rgba(79, 59, 228, 1)');
+    return redirect(route('pagos.index'));
+}
 
     /**
      * Remove the specified resource from storage.

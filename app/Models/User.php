@@ -52,4 +52,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(RegistroConductor::class, 'user_id');
     }
+    // En el modelo User.php
+    public function datosBancarios()
+    {
+        return $this->hasOne(DatosBancario::class);
+    }
+
 }
